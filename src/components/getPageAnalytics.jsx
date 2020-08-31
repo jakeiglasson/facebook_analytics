@@ -2,7 +2,8 @@ export const getPageAnalytics = async (
   page_id,
   callingObj,
   getPageAccessToken,
-  getPageLikes
+  getPageLikes,
+  getUserPageEngagement
 ) => {
   console.log("Getting analytics for page");
 
@@ -19,7 +20,7 @@ export const getPageAnalytics = async (
   await getPageAccessToken(page_id, base, access_token, callingObj);
   let pageAccessToken = callingObj.state.pageAccessToken;
 
-  await callingObj.getUserPageEngagement(page_id, base, pageAccessToken);
+  await getUserPageEngagement(page_id, base, pageAccessToken, callingObj);
   await getPageLikes(page_id, base, pageAccessToken, callingObj);
   console.log(callingObj.state);
 

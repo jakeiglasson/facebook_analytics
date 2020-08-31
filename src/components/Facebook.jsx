@@ -20,6 +20,7 @@ import { setDateRange } from "./setDateRange.jsx";
 import { getPageAccessToken } from "./getPageAccessToken.jsx";
 import { getPageAnalytics } from "./getPageAnalytics.jsx";
 import { getPageLikes } from "./getPageLikes.jsx";
+import { getUserPageEngagement } from "./getUserPageEngagement";
 
 class Facebook extends Component {
   state = {
@@ -79,139 +80,8 @@ class Facebook extends Component {
     }
   };
 
-  // formattedDates = () => {
-  //   let { startDate, endDate } = this.state.dateRange;
-  //   startDate = format(new Date(startDate), "MM/dd/yyyy");
-  //   endDate = addDays(endDate, 1);
-  //   endDate = format(new Date(endDate), "MM/dd/yyyy");
-  //   startDate += "T00:00:00";
-  //   endDate += "T24:00:00";
-  //   return { startDate, endDate };
-  // };
-
-  getUserPageEngagement = async (page_id, base, pageAccessToken) => {
-    let userPageEngagementRequest = async (startDate, endDate, repeat) => {
-      console.log(this.state);
-      startDate += "T00:00:00";
-      endDate += "T24:00:00";
-
-      console.log("startDate: ", startDate);
-      console.log("endDate: ", endDate);
-      console.log("repeat: ", repeat);
-
-      // Retrieve user engagement metrics
-      let since = `since=${startDate}`;
-      let until = `until=${endDate}`;
-      let metric = `metric=page_engaged_users`;
-      let period = `period=day`;
-      let params = `${since}&${until}&${metric}&${period}`;
-      let url = `${base}/${page_id}/insights/?${params}&access_token=${pageAccessToken}`;
-
-      console.log("|-> retrieving user page engagement metrics: ");
-      console.log(url);
-
-      await axios
-        .get(url)
-        .then(async (response) => {
-          console.log(response);
-          // handle success
-          let data = await response.data.data[0].values;
-          if (repeat) {
-            console.log(data);
-
-            let { engagedUsers } = this.state;
-            console.log(engagedUsers);
-            engagedUsers.push(data);
-            console.log(engagedUsers);
-
-            await this.setState({ engagedUsers: engagedUsers });
-            console.log(this.state);
-          } else {
-            console.log(data);
-
-            await this.setState({
-              engagedUsers: data,
-            });
-
-            console.log(this.state);
-          }
-        })
-        .catch((error) => {
-          // handle error
-          console.log(error);
-        });
-    };
-
-    let concatArray = false;
-    if (this.state.requestsNeeded > 1) {
-      // Multiple requests
-      concatArray = true;
-      let { requestsNeeded } = this.state;
-      let count = 1;
-      while (requestsNeeded > 0) {
-        console.log("Executing while loop: ", count);
-        let { startDate } = this.state.dateRange;
-        startDate = addDays(startDate, 90 * (count - 1));
-        let endDate = addDays(startDate, 90);
-
-        if (requestsNeeded == 1) {
-          endDate = this.state.dateRange.endDate;
-          endDate = addDays(endDate, 1);
-        }
-
-        console.log(endDate);
-
-        // Convert date format to mm/dd/yyyy
-        startDate = format(new Date(startDate), "MM/dd/yyyy");
-        endDate = format(new Date(endDate), "MM/dd/yyyy");
-
-        console.log(endDate);
-
-        requestsNeeded -= 1;
-        await userPageEngagementRequest(startDate, endDate, true, this);
-        count += 1;
-      }
-    } else {
-      // Single Request
-      let { startDate, endDate } = this.state.dateRange;
-      endDate = addDays(endDate, 1);
-      startDate = format(new Date(startDate), "MM/dd/yyyy");
-      endDate = format(new Date(endDate), "MM/dd/yyyy");
-      await userPageEngagementRequest(startDate, endDate, false, this);
-      console.log(this.state);
-    }
-    console.log("out of while loop");
-
-    console.log(this.state);
-    if (concatArray) {
-      this.reduceArray("engagedUsers");
-      // Get total Engagements
-      let totalEngagedUsers = 0;
-      this.state.engagedUsers.map((arr) => {
-        arr.map((value) => {
-          totalEngagedUsers += value.value;
-        });
-      });
-      this.setState({
-        totalEngagedUsers: totalEngagedUsers,
-      });
-    } else {
-      // Get total Engagements
-      let totalEngagedUsers = 0;
-      this.state.engagedUsers.map((value) => {
-        // console.log(value);
-        totalEngagedUsers += value.value;
-      });
-      this.setState({
-        totalEngagedUsers: totalEngagedUsers,
-      });
-    }
-
-    // End of page engagement code
-  };
-
   reduceArray = async (stateObjName) => {
-    console.log("reducing engaged users array");
+    console.log("reducing array");
     console.log(this.state);
 
     let value = await this.state[stateObjName];
@@ -309,7 +179,8 @@ class Facebook extends Component {
                           page.page_id,
                           this,
                           getPageAccessToken,
-                          getPageLikes
+                          getPageLikes,
+                          getUserPageEngagement
                         );
                       }}
                     >
