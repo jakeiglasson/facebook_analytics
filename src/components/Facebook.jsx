@@ -15,6 +15,8 @@ import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import DateRangePickerComponent from "./DateRangePickerComponent";
 import { format, addDays, subDays } from "date-fns";
+// Imported Custom Functions
+import { setDateRange } from "./setDateRange.jsx";
 
 class Facebook extends Component {
   state = {
@@ -41,51 +43,6 @@ class Facebook extends Component {
     totalPageLikesBetweenRange: "",
     displayDailyEngagements: "none",
     displayDailyPageLikes: "none",
-  };
-
-  setDateRange = async (startDate, endDate) => {
-    console.log("setting date range");
-    console.log(startDate);
-
-    await this.setState({
-      dateRange: {
-        startDate: startDate,
-        endDate: endDate,
-        originalStartDate: startDate,
-        originalEndDate: endDate,
-      },
-    });
-    console.log("date range set");
-    console.log(this.state.originalStartDate, this.state.originalEndDate);
-
-    console.log(this.state);
-
-    // Convert to seconds to get amount of days
-    let startDateSec = format(new Date(startDate), "t");
-    let endDateSec = format(new Date(endDate), "t");
-
-    // Add additional day to endDate
-    endDate = addDays(endDate, 1);
-
-    // Convert date format to mm/dd/yyyy
-    startDate = format(new Date(startDate), "MM/dd/yyyy");
-    endDate = format(new Date(endDate), "MM/dd/yyyy");
-
-    console.log("Range: " + startDate + " - " + endDate);
-
-    // Get range amount in days
-    let days = 1 + (endDateSec - startDateSec) / 86400;
-    console.log(days);
-
-    // Workout the amount of requests to send
-    if (days > 90) {
-      await this.setState({ requestsNeeded: Math.ceil(days / 90) });
-    } else {
-      await this.setState({ requestsNeeded: 1 });
-    }
-    console.log(this.state);
-
-    console.log(this.state);
   };
 
   responseFacebook = async (response) => {
@@ -804,7 +761,10 @@ class Facebook extends Component {
           <div>{this.analyticsButtons()}</div>
 
           <div>
-            <DateRangePickerComponent setDateRange={this.setDateRange} />
+            <DateRangePickerComponent
+              setDateRange={setDateRange}
+              callingComponent={this}
+            />
           </div>
           {this.fbPagesCard()}
           {this.pageAnalyticsTable()}

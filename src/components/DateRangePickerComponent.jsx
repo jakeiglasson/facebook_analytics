@@ -15,13 +15,14 @@ class DateRangePickerComponent extends Component {
 
   componentDidMount = () => {
     // console.log(this.state);
+    console.log("componentDidMount: DateRangePickerComponent");
 
     let startDate = this.state.selection[0].startDate;
     let endDate = this.state.selection[0].endDate;
     console.log(startDate);
     console.log(endDate);
 
-    this.props.setDateRange(startDate, endDate);
+    this.props.setDateRange(startDate, endDate, this.props.callingComponent);
   };
 
   handleChange = async (selection) => {
@@ -32,7 +33,7 @@ class DateRangePickerComponent extends Component {
     let startDate = this.state.selection[0].startDate;
     let endDate = this.state.selection[0].endDate;
 
-    this.props.setDateRange(startDate, endDate);
+    this.props.setDateRange(startDate, endDate, this.props.callingComponent);
   };
   render() {
     return (
