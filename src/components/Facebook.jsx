@@ -17,7 +17,8 @@ import DateRangePickerComponent from "./DateRangePickerComponent";
 import { format, addDays, subDays } from "date-fns";
 // Imported Custom Functions
 import { setDateRange } from "./setDateRange.jsx";
-import { getPageAccessToken } from "./getPageAcessToken.jsx";
+import { getPageAccessToken } from "./getPageAccessToken.jsx";
+import { getPageAnalytics } from "./getPageAnalytics.jsx";
 
 class Facebook extends Component {
   state = {
@@ -77,38 +78,15 @@ class Facebook extends Component {
     }
   };
 
-  getPageAnalytics = async (page_id) => {
-    console.log("Getting analytics for page");
-
-    await this.setState({
-      engagedUsers: [],
-      pageLikesBetweenRange: [],
-      renderPageAnalytics: false,
-    });
-
-    let base = "https://graph.facebook.com";
-    let access_token = `access_token=${this.state.accessToken}`;
-
-    // Get and set page access token
-    await getPageAccessToken(page_id, base, access_token, this);
-    let pageAccessToken = this.state.pageAccessToken;
-
-    await this.getUserPageEngagement(page_id, base, pageAccessToken);
-    await this.getPageLikes(page_id, base, pageAccessToken);
-    console.log(this.state);
-
-    this.setState({ renderPageAnalytics: true });
-  };
-
-  formattedDates = () => {
-    let { startDate, endDate } = this.state.dateRange;
-    startDate = format(new Date(startDate), "MM/dd/yyyy");
-    endDate = addDays(endDate, 1);
-    endDate = format(new Date(endDate), "MM/dd/yyyy");
-    startDate += "T00:00:00";
-    endDate += "T24:00:00";
-    return { startDate, endDate };
-  };
+  // formattedDates = () => {
+  //   let { startDate, endDate } = this.state.dateRange;
+  //   startDate = format(new Date(startDate), "MM/dd/yyyy");
+  //   endDate = addDays(endDate, 1);
+  //   endDate = format(new Date(endDate), "MM/dd/yyyy");
+  //   startDate += "T00:00:00";
+  //   endDate += "T24:00:00";
+  //   return { startDate, endDate };
+  // };
 
   getPageLikes = async (page_id, base, pageAccessToken) => {
     // Retrieve page likes metric
@@ -118,7 +96,7 @@ class Facebook extends Component {
     let fields = `fields=fan_count`;
     let url = `${base}/${page_id}/?${fields}&access_token=${pageAccessToken}`;
 
-    console.log("|-> retrieving page likes metric: ");
+    console.log("|-> retrieving metric: total page likes");
     console.log(url);
 
     await axios
@@ -159,18 +137,6 @@ class Facebook extends Component {
           console.log(response);
           let data = await response.data.data[0].values;
 
-          // let likesByRange = await response.data.data[0].values;
-          // likesByRange.map((like, i) => {
-          //   pageLikesBetweenRange += like.value.total;
-          // });
-
-          // await this.setState({
-          //   pageLikesBetweenRange: pageLikesBetweenRange,
-          // });
-          // // -----
-          // console.log(response);
-
-          // handle success
           if (repeat) {
             console.log(data);
 
@@ -199,6 +165,7 @@ class Facebook extends Component {
         });
     };
 
+    // Handle multiple requests
     let concatArray = false;
     if (this.state.requestsNeeded > 1) {
       // Multiple requests
@@ -514,7 +481,11 @@ class Facebook extends Component {
                     <Button
                       variant="primary"
                       onClick={(event) => {
-                        this.getPageAnalytics(page.page_id);
+                        getPageAnalytics(
+                          page.page_id,
+                          getPageAccessToken,
+                          this
+                        );
                       }}
                     >
                       Get page analytics
