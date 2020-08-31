@@ -17,6 +17,7 @@ import DateRangePickerComponent from "./DateRangePickerComponent";
 import { format, addDays, subDays } from "date-fns";
 // Imported Custom Functions
 import { setDateRange } from "./setDateRange.jsx";
+import { getPageAccessToken } from "./getPageAcessToken.jsx";
 
 class Facebook extends Component {
   state = {
@@ -89,7 +90,7 @@ class Facebook extends Component {
     let access_token = `access_token=${this.state.accessToken}`;
 
     // Get and set page access token
-    await this.getPageAccessToken(page_id, base, access_token);
+    await getPageAccessToken(page_id, base, access_token, this);
     let pageAccessToken = this.state.pageAccessToken;
 
     await this.getUserPageEngagement(page_id, base, pageAccessToken);
@@ -97,28 +98,6 @@ class Facebook extends Component {
     console.log(this.state);
 
     this.setState({ renderPageAnalytics: true });
-  };
-
-  getPageAccessToken = async (page_id, base, access_token) => {
-    // Get page access token
-
-    let fields = "fields=access_token";
-    let url = `${base}/${page_id}?${fields}&${access_token}`;
-    let pageAccessToken;
-
-    console.log("|-> retrieving page access token: ");
-    console.log(url);
-
-    await axios
-      .get(url)
-      .then(async (response) => {
-        console.log(response);
-        pageAccessToken = response.data.access_token;
-        await this.setState({ pageAccessToken: pageAccessToken });
-      })
-      .catch(async (error) => {
-        console.log(error);
-      });
   };
 
   formattedDates = () => {
