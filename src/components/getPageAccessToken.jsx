@@ -12,13 +12,13 @@ export const getPageAccessToken = async (
   let url = `${base}/${page_id}?${fields}&${access_token}`;
   let pageAccessToken;
 
-  console.log("|-> retrieving page access token: ");
-  console.log(url);
+  // console.log("|-> retrieving page access token: ");
+  // console.log(url);
 
   await axios
     .get(url)
     .then(async (response) => {
-      console.log(response);
+      // console.log(response);
       pageAccessToken = response.data.access_token;
       await callingObj.setState({ pageAccessToken: pageAccessToken });
     })

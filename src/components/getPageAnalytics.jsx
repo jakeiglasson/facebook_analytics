@@ -24,11 +24,16 @@ export const getPageAnalytics = async (
   await getPageAccessToken(page_id, base, access_token, callingObj);
   let pageAccessToken = callingObj.state.pageAccessToken;
 
-  await getUserPageEngagement(page_id, base, pageAccessToken, callingObj);
-  await getPageLikes(page_id, base, pageAccessToken, callingObj);
-  await getPageEngagements(page_id, base, pageAccessToken, callingObj);
-  await getNegativePageEngagements(page_id, base, pageAccessToken, callingObj);
-  await getPagePostData(page_id, base, pageAccessToken, callingObj);
+  let promises = [];
+  promises.push(
+    getUserPageEngagement(page_id, base, pageAccessToken, callingObj),
+    getPageLikes(page_id, base, pageAccessToken, callingObj),
+    getPageEngagements(page_id, base, pageAccessToken, callingObj),
+    getNegativePageEngagements(page_id, base, pageAccessToken, callingObj),
+    getPagePostData(page_id, base, pageAccessToken, callingObj)
+  );
+  await Promise.all(promises);
+
   console.log(callingObj.state);
 
   callingObj.setState({ renderPageAnalytics: true });

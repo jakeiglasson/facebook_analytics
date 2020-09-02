@@ -7,8 +7,8 @@ export const getPagePostData = async (
   pageAccessToken,
   callingObj
 ) => {
+  // Get post identifying data (created_time, message, id)
   let postIdentifyingData;
-
   let getPostIdentifyingData = async () => {
     let xPagePosts = callingObj.state.xPagePosts;
     let limit = `limit=${xPagePosts}`;
@@ -18,146 +18,58 @@ export const getPagePostData = async (
     console.log("|-> retrieving published posts from page:");
     console.log(url);
 
-    await axios
-      .get(url)
-      .then(async (response) => {
-        // handle success
-        console.log(response);
-
-        postIdentifyingData = await response.data.data;
-      })
-      .catch((error) => {
-        // handle error
-        console.log(error);
-      });
-
-    console.log(postIdentifyingData);
+    try {
+      const response = await axios.get(url);
+      postIdentifyingData = response.data.data;
+    } catch (error) {
+      console.log(error);
+    }
   };
-
   await getPostIdentifyingData();
 
-  let getPostInfo = async (post_id, i) => {
-    console.log(post_id);
+  // Retrieve all given posts likes and comments
+  let postData = [];
+
+  let getTotalMetric = async (metric, post_id, i) => {
     let summary = "summary=total_count";
+    let url = `${base}/${post_id}/${metric}/?${summary}&access_token=${pageAccessToken}`;
 
-    let objectData = {
-      likes: "",
-      comments: "",
-    };
-
-    // Get total likes
-    let url = `${base}/${post_id}/likes/?${summary}&access_token=${pageAccessToken}`;
-
-    console.log("|-> retrieving post information:");
+    console.log(`|-> retrieving post ${metric}:`);
     console.log(url);
 
-    await axios
-      .get(url)
-      .then(async (response) => {
-        // handle success
-        console.log(response);
-        objectData["likes"] = await response.data.summary.total_count;
-      })
-      .catch((error) => {
-        // handle error
-        console.log(error);
-      });
-    // --> End: Get total Likes
-
-    // Get total comments
-    url = `${base}/${post_id}/comments/?${summary}&access_token=${pageAccessToken}`;
-
-    console.log("|-> retrieving post information:");
-    console.log(url);
-
-    await axios
-      .get(url)
-      .then(async (response) => {
-        // handle success
-        await console.log(response);
-        objectData["comments"] = await response.data.summary.total_count;
-      })
-      .catch((error) => {
-        // handle error
-        console.log(error);
-      });
-    // --> End: get total comments
-    console.log(objectData);
-    console.log(objectData.likes);
-    return objectData;
-  };
-
-  let packageData = async () => {
     try {
-      console.log(postIdentifyingData);
-      let postsData = {};
-      console.log(postIdentifyingData);
-      // postIdentifyingData.map(async (object, i) => {
-      //   getPostInfo(object.id, i).then(async (response) => {
-      //     try {
-      //       console.log(await response[0].likes);
-      //     } catch (error) {
-      //       console.log(error);
-      //     }
-      //   });
-      //   console.log(getPostInfo(object.id, i));
-      //   postsData[i] = await getPostInfo(object.id, i);
-      // });
-
-      // postIdentifyingData.map(async (object, i) => {
-      //   let x = await getPostInfo(object.id, i);
-      //   console.log(x);
-      //   postIdentifyingData[i] = Object.assign(postIdentifyingData[i], x);
-      // });
-      postIdentifyingData.forEach(async (object, i) => {
-        let x = await getPostInfo(object.id, i);
-        console.log(x);
-        postIdentifyingData[i] = Object.assign(postIdentifyingData[i], x);
-      });
-
-      // console.log(postsData);
-      // console.log(postsData[0].likes);
-      console.log(postIdentifyingData);
-      console.log(postIdentifyingData[0].comments);
-
-      await callingObj.setState(
-        {
-          pagePostsData: postIdentifyingData,
-        },
-        () => {
-          console.log("setState complete");
-        }
-      );
-
-      const { comments, likes } = callingObj.state.pagePostsData[0];
-      console.log(comments, likes);
-
-      try {
-        console.log(callingObj.state);
-        console.log(callingObj.state.pagePostsData);
-        console.log(callingObj.state.pagePostsData[0]);
-        console.log(callingObj.state.pagePostsData[0].id);
-        console.log(callingObj.state.pagePostsData[0].comments);
-      } catch (error) {
-        console.log(error);
-      }
+      const response = await axios.get(url);
+      postData[i][`${metric}`] = response.data.summary.total_count;
     } catch (error) {
       console.log(error);
     }
   };
 
-  await packageData();
+  const retrievePostData = async () => {
+    let promises = [];
+    postIdentifyingData.forEach((post, i) => {
+      postData.push({});
+      promises.push(getTotalMetric("likes", post.id, i));
+      promises.push(getTotalMetric("comments", post.id, i));
+    });
+    await Promise.all(promises);
+  };
+  await retrievePostData();
 
-  console.log(callingObj.state);
-  try {
-    console.log(callingObj.state.pagePostsData[0].comments);
-  } catch (error) {
-    console.log(error);
-  }
+  const combinePostData = () => {
+    postData.forEach((post, i) => {
+      postData[i] = Object.assign(postData[i], postIdentifyingData[i]);
+      if (postData[i].message == undefined) {
+        postData[i]["message"] = "-";
+      }
+    });
+  };
+  await combinePostData();
 
-  // let x = await callingObj.state.pagePostsData[0];
-  // console.log(x.comments);
-  // console.log(x[0].message);
-  // console.log(x[0].likes.total_count);
-  // console.log(await x[0].comments);
+  // Set posts data into Facebook components state
+  await callingObj.setState({
+    pagePostsData: postData,
+  });
+
+  console.log(callingObj.state.pagePostsData);
 };

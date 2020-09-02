@@ -61,7 +61,7 @@ class Facebook extends Component {
   };
 
   responseFacebook = async (response) => {
-    console.log(response);
+    // console.log(response);
     let pagesData;
 
     if (response.status != "unknown") {
@@ -87,13 +87,13 @@ class Facebook extends Component {
 
       await this.setState({ pages: pages });
 
-      console.log(pages);
+      // console.log(pages);
     }
   };
 
   reduceArray = async (stateObjName) => {
-    console.log("reducing array");
-    console.log(this.state);
+    // console.log("reducing array");
+    // console.log(this.state);
 
     let value = await this.state[stateObjName];
     value = value.reduce(function (arr, e) {
@@ -104,7 +104,7 @@ class Facebook extends Component {
       [`${stateObjName}`]: value,
     });
 
-    console.log("finished reducing", this.state);
+    // console.log("finished reducing", this.state);
   };
 
   LoginButton = () => {
@@ -274,7 +274,7 @@ class Facebook extends Component {
 
     if (renderPageAnalytics) {
       // console.log(engagedUsers);
-      console.log("rendering page analytics");
+      // console.log("rendering page analytics");
 
       let colWidth = (
         <colgroup>
@@ -295,7 +295,7 @@ class Facebook extends Component {
         typeTotalsForNegativePageEngagementsBetweenRange,
       } = this.state;
 
-      console.log(this.state);
+      // console.log(this.state);
 
       let { originalEndDate, originalStartDate } = this.state.dateRange;
       originalEndDate = format(new Date(originalEndDate), "dd/MM/yyyy");
@@ -542,60 +542,48 @@ class Facebook extends Component {
 
   pagePostsCards = () => {
     let { renderPageAnalytics } = this.state;
-    let render = false;
 
     if (renderPageAnalytics) {
-      console.log(this.state.test);
-      try {
-        if (
-          this.state.getPagePostData[0] != undefined &&
-          this.state.getPagePostData[0].comments != undefined
-        ) {
-          render = true;
-        }
-      } catch (error) {}
-    }
-
-    if (renderPageAnalytics && render) {
-      console.log("rendering page posts cards");
+      console.log("rendering page posts");
       let { pagePostsData } = this.state;
+      console.log(pagePostsData);
       let postCard = (post, key) => {
         console.log(post.likes);
         console.log(post.message);
+        let date = format(new Date(post.created_time), "EEEE LLL do yyyy");
         return (
-          <div key={key}>
-            Page Post
-            <br />
-            Message: {post.message}
-            <br />
-            Likes:
-            <br />
-            Comments:
-          </div>
+          <Card style={{ width: "18rem", color: "black" }} key={key}>
+            {/* <Card.Img variant="top" src="holder.js/100px180" /> */}
+            <Card.Body>
+              <Card.Title>{date}</Card.Title>
+              <Card.Text>{post.message}</Card.Text>
+              <div>Likes: {post.likes}</div>
+              <div>Comments: {post.comments}</div>
+            </Card.Body>
+          </Card>
+          // <div key={key}>
+          //   Page Post
+          //   <br />
+          //   Message: {post.message}
+          //   <br />
+          //   Likes: {post.likes}
+          //   <br />
+          //   Comments: {post.comments}
+          // </div>
         );
       };
 
-      // console.log(pagePostsData);
-
-      // pagePostsData.map((post) => {
-      //   let x = postCard(post);
-      //   console.log(x);
-      //   return x;
-      // });
-
-      // let content = pagePostsData.map((post) => {
-      //   let x = postCard(post);
-      //   console.log(x);
-      //   return x;
-      // });
-
       return (
-        <div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            rowGap: "10px",
+          }}
+          className="mb-2"
+        >
           {pagePostsData.map((post, key) => {
-            console.log(post);
-            let x = postCard(post, key);
-            console.log(x);
-            return x;
+            return postCard(post, key);
           })}
         </div>
       );
