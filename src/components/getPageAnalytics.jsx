@@ -3,7 +3,10 @@ export const getPageAnalytics = async (
   callingObj,
   getPageAccessToken,
   getPageLikes,
-  getUserPageEngagement
+  getUserPageEngagement,
+  getPageEngagements,
+  getNegativePageEngagements,
+  getPagePostData
 ) => {
   console.log("Getting analytics for page");
 
@@ -11,6 +14,7 @@ export const getPageAnalytics = async (
     engagedUsers: [],
     pageLikesBetweenRange: [],
     renderPageAnalytics: false,
+    getPageEngagements: [],
   });
 
   let base = "https://graph.facebook.com";
@@ -22,6 +26,9 @@ export const getPageAnalytics = async (
 
   await getUserPageEngagement(page_id, base, pageAccessToken, callingObj);
   await getPageLikes(page_id, base, pageAccessToken, callingObj);
+  await getPageEngagements(page_id, base, pageAccessToken, callingObj);
+  await getNegativePageEngagements(page_id, base, pageAccessToken, callingObj);
+  await getPagePostData(page_id, base, pageAccessToken, callingObj);
   console.log(callingObj.state);
 
   callingObj.setState({ renderPageAnalytics: true });

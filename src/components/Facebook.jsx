@@ -10,6 +10,7 @@ import axios from "axios";
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
 import Table from "react-bootstrap/Table";
+import Form from "react-bootstrap/Form";
 // Date Range Picker
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
@@ -20,7 +21,10 @@ import { setDateRange } from "./setDateRange.jsx";
 import { getPageAccessToken } from "./getPageAccessToken.jsx";
 import { getPageAnalytics } from "./getPageAnalytics.jsx";
 import { getPageLikes } from "./getPageLikes.jsx";
-import { getUserPageEngagement } from "./getUserPageEngagement";
+import { getUserPageEngagement } from "./getUserPageEngagement.jsx";
+import { getPageEngagements } from "./getPageEngagements.jsx";
+import { getNegativePageEngagements } from "./getNegativePageEngagements.jsx";
+import { getPagePostData } from "./getPagePostData.jsx";
 
 class Facebook extends Component {
   state = {
@@ -44,9 +48,16 @@ class Facebook extends Component {
     renderPageAnalytics: false,
     pageLikes: "",
     pageLikesBetweenRange: [],
+    pageEngagementsBetweenRange: [],
+    negativePageEngagementsBetweenRange: [],
+    typeTotalsForPageEngagementsBetweenRange: [],
+    typeTotalsForNegativePageEngagementsBetweenRange: [],
     totalPageLikesBetweenRange: "",
     displayDailyEngagements: "none",
     displayDailyPageLikes: "none",
+    xPagePosts: 3,
+    pagePostsData: [],
+    test: 0,
   };
 
   responseFacebook = async (response) => {
@@ -180,7 +191,10 @@ class Facebook extends Component {
                           this,
                           getPageAccessToken,
                           getPageLikes,
-                          getUserPageEngagement
+                          getUserPageEngagement,
+                          getPageEngagements,
+                          getNegativePageEngagements,
+                          getPagePostData
                         );
                       }}
                     >
@@ -277,6 +291,8 @@ class Facebook extends Component {
         totalPageLikesBetweenRange,
         displayDailyEngagements,
         displayDailyPageLikes,
+        typeTotalsForPageEngagementsBetweenRange,
+        typeTotalsForNegativePageEngagementsBetweenRange,
       } = this.state;
 
       console.log(this.state);
@@ -291,7 +307,7 @@ class Facebook extends Component {
             {colWidth}
             <thead>
               <tr>
-                <th>Total Page Likes</th>
+                <th>Total Page Likes (Lifetime)</th>
                 <th>{pageLikes}</th>
               </tr>
               <tr>
@@ -352,6 +368,104 @@ class Facebook extends Component {
             engagedUsers,
             "User Engagements"
           )}
+          <Table striped bordered hover variant="dark">
+            {colWidth}
+            <thead>
+              <tr>
+                <th>
+                  Positive Engagement Metrics
+                  <br />
+                  {`${originalStartDate}`} - {`${originalEndDate}`}
+                  <br />
+                </th>
+                <th>
+                  Total:
+                  <br />
+                  {typeTotalsForPageEngagementsBetweenRange.total}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Answered a question</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.answer}</td>
+              </tr>
+              <tr>
+                <td>Offers claimed</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.claim}</td>
+              </tr>
+              <tr>
+                <td>Commented on a story</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.comment}</td>
+              </tr>
+              <tr>
+                <td>Liked a story</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.like}</td>
+              </tr>
+              <tr>
+                <td>Shared a story</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.link}</td>
+              </tr>
+              <tr>
+                <td>Respond to an event</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.rsvp}</td>
+              </tr>
+              <tr>
+                <td>Other</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.other}</td>
+              </tr>
+            </tbody>
+          </Table>
+          <Table striped bordered hover variant="dark">
+            {colWidth}
+            <thead>
+              <tr>
+                <th>
+                  Negative Engagement Metrics
+                  <br />
+                  {`${originalStartDate}`} - {`${originalEndDate}`}
+                  <br />
+                </th>
+                <th>
+                  Total:
+                  <br />
+                  {typeTotalsForNegativePageEngagementsBetweenRange.total}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Hide story from page</td>
+                <td>
+                  {typeTotalsForNegativePageEngagementsBetweenRange.hide_clicks}
+                </td>
+              </tr>
+              <tr>
+                <td>Hide all posts from page</td>
+                <td>
+                  {
+                    typeTotalsForNegativePageEngagementsBetweenRange.hide_all_clicks
+                  }
+                </td>
+              </tr>
+              <tr>
+                <td>Reported an object as spam</td>
+                <td>
+                  {
+                    typeTotalsForNegativePageEngagementsBetweenRange.report_spam_clicks
+                  }
+                </td>
+              </tr>
+              <tr>
+                <td>Unliked page</td>
+                <td>
+                  {
+                    typeTotalsForNegativePageEngagementsBetweenRange.unlike_page_clicks
+                  }
+                </td>
+              </tr>
+            </tbody>
+          </Table>
         </>
       );
     }
@@ -399,6 +513,95 @@ class Facebook extends Component {
     );
   };
 
+  handleChange(event) {
+    let value = event.target.value;
+    if (value > 100) {
+      value = 100;
+    }
+    this.setState({ xPagePosts: value });
+  }
+
+  xPagePostsForm = () => {
+    return (
+      <Form style={{ margin: "auto" }}>
+        <Form.Group>
+          <Form.Label>Last X posts to retrieve (100 max)</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="0"
+            style={{ maxWidth: "100px", margin: "auto" }}
+            value={this.state.xPagePosts}
+            onChange={(event) => {
+              this.handleChange(event);
+            }}
+          />
+        </Form.Group>
+      </Form>
+    );
+  };
+
+  pagePostsCards = () => {
+    let { renderPageAnalytics } = this.state;
+    let render = false;
+
+    if (renderPageAnalytics) {
+      console.log(this.state.test);
+      try {
+        if (
+          this.state.getPagePostData[0] != undefined &&
+          this.state.getPagePostData[0].comments != undefined
+        ) {
+          render = true;
+        }
+      } catch (error) {}
+    }
+
+    if (renderPageAnalytics && render) {
+      console.log("rendering page posts cards");
+      let { pagePostsData } = this.state;
+      let postCard = (post, key) => {
+        console.log(post.likes);
+        console.log(post.message);
+        return (
+          <div key={key}>
+            Page Post
+            <br />
+            Message: {post.message}
+            <br />
+            Likes:
+            <br />
+            Comments:
+          </div>
+        );
+      };
+
+      // console.log(pagePostsData);
+
+      // pagePostsData.map((post) => {
+      //   let x = postCard(post);
+      //   console.log(x);
+      //   return x;
+      // });
+
+      // let content = pagePostsData.map((post) => {
+      //   let x = postCard(post);
+      //   console.log(x);
+      //   return x;
+      // });
+
+      return (
+        <div>
+          {pagePostsData.map((post, key) => {
+            console.log(post);
+            let x = postCard(post, key);
+            console.log(x);
+            return x;
+          })}
+        </div>
+      );
+    }
+  };
+
   render() {
     return (
       <>
@@ -407,12 +610,15 @@ class Facebook extends Component {
           <div>{this.analyticsButtons()}</div>
 
           <div>
+            {this.xPagePostsForm()}
             <DateRangePickerComponent
               setDateRange={setDateRange}
               callingComponent={this}
             />
           </div>
+
           {this.fbPagesCard()}
+          {this.pagePostsCards()}
           {this.pageAnalyticsTable()}
         </div>
       </>
