@@ -15,31 +15,32 @@ class DateRangePickerComponent extends Component {
 
   componentDidMount = () => {
     // console.log(this.state);
+    // console.log("componentDidMount: DateRangePickerComponent");
 
     let startDate = this.state.selection[0].startDate;
     let endDate = this.state.selection[0].endDate;
-    console.log(startDate);
-    console.log(endDate);
+    // console.log(startDate);
+    // console.log(endDate);
 
-    this.props.setDateRange(startDate, endDate);
+    this.props.setDateRange(startDate, endDate, this.props.callingComponent);
   };
 
   handleChange = async (selection) => {
-    console.log(selection);
+    // console.log(selection);
     await this.setState({ selection: selection });
 
-    console.log(this.state);
+    // console.log(this.state);
     let startDate = this.state.selection[0].startDate;
     let endDate = this.state.selection[0].endDate;
 
-    this.props.setDateRange(startDate, endDate);
+    this.props.setDateRange(startDate, endDate, this.props.callingComponent);
   };
   render() {
     return (
       <React.Fragment>
         <DateRange
           onChange={(item) => {
-            console.log(item);
+            // console.log(item);
             this.handleChange([item.selection]);
           }}
           showSelectionPreview={true}

@@ -10,11 +10,22 @@ import axios from "axios";
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
 import Table from "react-bootstrap/Table";
+import Form from "react-bootstrap/Form";
 // Date Range Picker
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import DateRangePickerComponent from "./DateRangePickerComponent";
 import { format, addDays, subDays } from "date-fns";
+// Imported Custom Functions
+import { setDateRange } from "./setDateRange.jsx";
+import { getPageAccessToken } from "./getPageAccessToken.jsx";
+import { getPageAnalytics } from "./getPageAnalytics.jsx";
+import { getPageLikes } from "./getPageLikes.jsx";
+import { getUserPageEngagement } from "./getUserPageEngagement.jsx";
+import { getPageEngagements } from "./getPageEngagements.jsx";
+import { getNegativePageEngagements } from "./getNegativePageEngagements.jsx";
+import { getPagePostData } from "./getPagePostData.jsx";
+import { getPagePostDailyReach } from "./getPagePostDailyReach";
 
 class Facebook extends Component {
   state = {
@@ -38,58 +49,22 @@ class Facebook extends Component {
     renderPageAnalytics: false,
     pageLikes: "",
     pageLikesBetweenRange: [],
+    pageEngagementsBetweenRange: [],
+    negativePageEngagementsBetweenRange: [],
+    typeTotalsForPageEngagementsBetweenRange: [],
+    typeTotalsForNegativePageEngagementsBetweenRange: [],
     totalPageLikesBetweenRange: "",
     displayDailyEngagements: "none",
     displayDailyPageLikes: "none",
-  };
-
-  setDateRange = async (startDate, endDate) => {
-    console.log("setting date range");
-    console.log(startDate);
-
-    await this.setState({
-      dateRange: {
-        startDate: startDate,
-        endDate: endDate,
-        originalStartDate: startDate,
-        originalEndDate: endDate,
-      },
-    });
-    console.log("date range set");
-    console.log(this.state.originalStartDate, this.state.originalEndDate);
-
-    console.log(this.state);
-
-    // Convert to seconds to get amount of days
-    let startDateSec = format(new Date(startDate), "t");
-    let endDateSec = format(new Date(endDate), "t");
-
-    // Add additional day to endDate
-    endDate = addDays(endDate, 1);
-
-    // Convert date format to mm/dd/yyyy
-    startDate = format(new Date(startDate), "MM/dd/yyyy");
-    endDate = format(new Date(endDate), "MM/dd/yyyy");
-
-    console.log("Range: " + startDate + " - " + endDate);
-
-    // Get range amount in days
-    let days = 1 + (endDateSec - startDateSec) / 86400;
-    console.log(days);
-
-    // Workout the amount of requests to send
-    if (days > 90) {
-      await this.setState({ requestsNeeded: Math.ceil(days / 90) });
-    } else {
-      await this.setState({ requestsNeeded: 1 });
-    }
-    console.log(this.state);
-
-    console.log(this.state);
+    displayDailyReach: "none",
+    xPagePosts: 3,
+    pagePostsData: [],
+    test: 0,
+    dailyReachData: [],
   };
 
   responseFacebook = async (response) => {
-    console.log(response);
+    // console.log(response);
     let pagesData;
 
     if (response.status != "unknown") {
@@ -115,377 +90,13 @@ class Facebook extends Component {
 
       await this.setState({ pages: pages });
 
-      console.log(pages);
+      // console.log(pages);
     }
-  };
-
-  getPageAnalytics = async (page_id) => {
-    console.log("Getting analytics for page");
-
-    await this.setState({
-      engagedUsers: [],
-      pageLikesBetweenRange: [],
-      renderPageAnalytics: false,
-    });
-
-    let base = "https://graph.facebook.com";
-    let access_token = `access_token=${this.state.accessToken}`;
-
-    // Get and set page access token
-    await this.getPageAccessToken(page_id, base, access_token);
-    let pageAccessToken = this.state.pageAccessToken;
-
-    await this.getUserPageEngagement(page_id, base, pageAccessToken);
-    await this.getPageLikes(page_id, base, pageAccessToken);
-    console.log(this.state);
-
-    this.setState({ renderPageAnalytics: true });
-  };
-
-  getPageAccessToken = async (page_id, base, access_token) => {
-    // Get page access token
-
-    let fields = "fields=access_token";
-    let url = `${base}/${page_id}?${fields}&${access_token}`;
-    let pageAccessToken;
-
-    console.log("|-> retrieving page access token: ");
-    console.log(url);
-
-    await axios
-      .get(url)
-      .then(async (response) => {
-        console.log(response);
-        pageAccessToken = response.data.access_token;
-        await this.setState({ pageAccessToken: pageAccessToken });
-      })
-      .catch(async (error) => {
-        console.log(error);
-      });
-  };
-
-  formattedDates = () => {
-    let { startDate, endDate } = this.state.dateRange;
-    startDate = format(new Date(startDate), "MM/dd/yyyy");
-    endDate = addDays(endDate, 1);
-    endDate = format(new Date(endDate), "MM/dd/yyyy");
-    startDate += "T00:00:00";
-    endDate += "T24:00:00";
-    return { startDate, endDate };
-  };
-
-  getPageLikes = async (page_id, base, pageAccessToken) => {
-    // Retrieve page likes metric
-    // insights/?metric=page_fan_adds_by_paid_non_paid_unique&since=08/27/2020T00:00:00&until=09/04/2020T24:00:00
-
-    // Get total page likes
-    let fields = `fields=fan_count`;
-    let url = `${base}/${page_id}/?${fields}&access_token=${pageAccessToken}`;
-
-    console.log("|-> retrieving page likes metric: ");
-    console.log(url);
-
-    await axios
-      .get(url)
-      .then(async (response) => {
-        // handle success
-        console.log(response);
-        await this.setState({
-          pageLikes: response.data.fan_count,
-        });
-        console.log(this.state);
-      })
-      .catch((error) => {
-        // handle error
-        console.log(error);
-      });
-
-    // Get page likes between range
-    let getPageLikesBetweenRange = async (startDate, endDate, repeat) => {
-      // let { startDate, endDate } = this.formattedDates();
-      startDate += "T00:00:00";
-      endDate += "T24:00:00";
-
-      let metric = `metric=page_fan_adds_by_paid_non_paid_unique`;
-      let dateRange = `since=${startDate}&until=${endDate}`;
-
-      url = `${base}/${page_id}/insights/?${metric}&${dateRange}&access_token=${pageAccessToken}`;
-
-      console.log("|-> retrieving page likes metric with given range: ");
-      console.log(url);
-
-      let pageLikesBetweenRange = 0;
-
-      await axios
-        .get(url)
-        .then(async (response) => {
-          // handle success
-          console.log(response);
-          let data = await response.data.data[0].values;
-
-          // let likesByRange = await response.data.data[0].values;
-          // likesByRange.map((like, i) => {
-          //   pageLikesBetweenRange += like.value.total;
-          // });
-
-          // await this.setState({
-          //   pageLikesBetweenRange: pageLikesBetweenRange,
-          // });
-          // // -----
-          // console.log(response);
-
-          // handle success
-          if (repeat) {
-            console.log(data);
-
-            let { pageLikesBetweenRange } = this.state;
-            console.log(pageLikesBetweenRange);
-            pageLikesBetweenRange.push(data);
-            console.log(pageLikesBetweenRange);
-
-            await this.setState({
-              pageLikesBetweenRange: pageLikesBetweenRange,
-            });
-            console.log(this.state);
-          } else {
-            console.log(data);
-
-            await this.setState({
-              pageLikesBetweenRange: data,
-            });
-
-            console.log(this.state);
-          }
-        })
-        .catch((error) => {
-          // handle error
-          console.log(error);
-        });
-    };
-
-    let concatArray = false;
-    if (this.state.requestsNeeded > 1) {
-      // Multiple requests
-      concatArray = true;
-      let { requestsNeeded } = this.state;
-      let count = 1;
-      while (requestsNeeded > 0) {
-        console.log("Executing while loop: ", count);
-        let { startDate } = this.state.dateRange;
-        startDate = addDays(startDate, 90 * (count - 1));
-        let endDate = addDays(startDate, 90);
-
-        if (requestsNeeded == 1) {
-          endDate = this.state.dateRange.endDate;
-          endDate = addDays(endDate, 1);
-        }
-
-        console.log(endDate);
-
-        // Convert date format to mm/dd/yyyy
-        startDate = format(new Date(startDate), "MM/dd/yyyy");
-        endDate = format(new Date(endDate), "MM/dd/yyyy");
-
-        console.log(endDate);
-
-        requestsNeeded -= 1;
-        await getPageLikesBetweenRange(startDate, endDate, true);
-        count += 1;
-      }
-    } else {
-      // Single Request
-      let { startDate, endDate } = this.state.dateRange;
-      endDate = addDays(endDate, 1);
-      startDate = format(new Date(startDate), "MM/dd/yyyy");
-      endDate = format(new Date(endDate), "MM/dd/yyyy");
-      await getPageLikesBetweenRange(startDate, endDate, false);
-      console.log(this.state);
-    }
-    console.log("out of while loop");
-
-    console.log(this.state);
-    if (concatArray) {
-      this.reduceArray("pageLikesBetweenRange");
-      // Get total Likes for range
-      let totalPageLikesBetweenRange = 0;
-      this.state.pageLikesBetweenRange.map((arr) => {
-        arr.map((value) => {
-          // console.log(value);
-          totalPageLikesBetweenRange += value.value.total;
-        });
-      });
-      this.setState({
-        totalPageLikesBetweenRange: totalPageLikesBetweenRange,
-      });
-
-      // Set data into useable format for table generator
-      let array = [];
-      // console.log(this.state.pageLikesBetweenRange);
-      let { pageLikesBetweenRange } = await this.state;
-
-      pageLikesBetweenRange.map((y) => {
-        y.map((x) => {
-          array.push({
-            value: x.value.total,
-            end_time: x.end_time,
-          });
-        });
-      });
-      console.log(array);
-      this.setState({
-        pageLikesBetweenRange: array,
-      });
-    } else {
-      // Get total Likes for range
-      let totalPageLikesBetweenRange = 0;
-      this.state.pageLikesBetweenRange.map((value) => {
-        // console.log(value);
-        totalPageLikesBetweenRange += value.value.total;
-      });
-      this.setState({
-        totalPageLikesBetweenRange: totalPageLikesBetweenRange,
-      });
-
-      // Set data into useable format for table generator
-      let array = [];
-      // console.log(this.state.pageLikesBetweenRange);
-      let { pageLikesBetweenRange } = await this.state;
-
-      pageLikesBetweenRange.map((x) => {
-        // console.log(x.value);
-        array.push({ value: x.value.total, end_time: x.end_time });
-      });
-      console.log(array);
-      this.setState({
-        pageLikesBetweenRange: array,
-      });
-    }
-  };
-
-  getUserPageEngagement = async (page_id, base, pageAccessToken) => {
-    let userPageEngagementRequest = async (startDate, endDate, repeat) => {
-      console.log(this.state);
-      startDate += "T00:00:00";
-      endDate += "T24:00:00";
-
-      console.log("startDate: ", startDate);
-      console.log("endDate: ", endDate);
-      console.log("repeat: ", repeat);
-
-      // Retrieve user engagement metrics
-      let since = `since=${startDate}`;
-      let until = `until=${endDate}`;
-      let metric = `metric=page_engaged_users`;
-      let period = `period=day`;
-      let params = `${since}&${until}&${metric}&${period}`;
-      let url = `${base}/${page_id}/insights/?${params}&access_token=${pageAccessToken}`;
-
-      console.log("|-> retrieving user page engagement metrics: ");
-      console.log(url);
-
-      await axios
-        .get(url)
-        .then(async (response) => {
-          console.log(response);
-          // handle success
-          let data = await response.data.data[0].values;
-          if (repeat) {
-            console.log(data);
-
-            let { engagedUsers } = this.state;
-            console.log(engagedUsers);
-            engagedUsers.push(data);
-            console.log(engagedUsers);
-
-            await this.setState({ engagedUsers: engagedUsers });
-            console.log(this.state);
-          } else {
-            console.log(data);
-
-            await this.setState({
-              engagedUsers: data,
-            });
-
-            console.log(this.state);
-          }
-        })
-        .catch((error) => {
-          // handle error
-          console.log(error);
-        });
-    };
-
-    let concatArray = false;
-    if (this.state.requestsNeeded > 1) {
-      // Multiple requests
-      concatArray = true;
-      let { requestsNeeded } = this.state;
-      let count = 1;
-      while (requestsNeeded > 0) {
-        console.log("Executing while loop: ", count);
-        let { startDate } = this.state.dateRange;
-        startDate = addDays(startDate, 90 * (count - 1));
-        let endDate = addDays(startDate, 90);
-
-        if (requestsNeeded == 1) {
-          endDate = this.state.dateRange.endDate;
-          endDate = addDays(endDate, 1);
-        }
-
-        console.log(endDate);
-
-        // Convert date format to mm/dd/yyyy
-        startDate = format(new Date(startDate), "MM/dd/yyyy");
-        endDate = format(new Date(endDate), "MM/dd/yyyy");
-
-        console.log(endDate);
-
-        requestsNeeded -= 1;
-        await userPageEngagementRequest(startDate, endDate, true, this);
-        count += 1;
-      }
-    } else {
-      // Single Request
-      let { startDate, endDate } = this.state.dateRange;
-      endDate = addDays(endDate, 1);
-      startDate = format(new Date(startDate), "MM/dd/yyyy");
-      endDate = format(new Date(endDate), "MM/dd/yyyy");
-      await userPageEngagementRequest(startDate, endDate, false, this);
-      console.log(this.state);
-    }
-    console.log("out of while loop");
-
-    console.log(this.state);
-    if (concatArray) {
-      this.reduceArray("engagedUsers");
-      // Get total Engagements
-      let totalEngagedUsers = 0;
-      this.state.engagedUsers.map((arr) => {
-        arr.map((value) => {
-          totalEngagedUsers += value.value;
-        });
-      });
-      this.setState({
-        totalEngagedUsers: totalEngagedUsers,
-      });
-    } else {
-      // Get total Engagements
-      let totalEngagedUsers = 0;
-      this.state.engagedUsers.map((value) => {
-        // console.log(value);
-        totalEngagedUsers += value.value;
-      });
-      this.setState({
-        totalEngagedUsers: totalEngagedUsers,
-      });
-    }
-
-    // End of page engagement code
   };
 
   reduceArray = async (stateObjName) => {
-    console.log("reducing engaged users array");
-    console.log(this.state);
+    // console.log("reducing array");
+    // console.log(this.state);
 
     let value = await this.state[stateObjName];
     value = value.reduce(function (arr, e) {
@@ -496,15 +107,15 @@ class Facebook extends Component {
       [`${stateObjName}`]: value,
     });
 
-    console.log("finished reducing", this.state);
+    // console.log("finished reducing", this.state);
   };
 
   LoginButton = () => {
     return (
       <div className="mb-3">
         <FacebookLogin
-          appId="720814561829107"
-          autoLoad={true}
+          appId={this.props.appID}
+          // autoLoad={true}
           fields="name,email,picture,friends,accounts"
           scope="public_profile,email,user_friends,pages_show_list,user_birthday,pages_read_engagement,pages_show_list,read_insights"
           // onClick={this.componentClicked}
@@ -578,7 +189,17 @@ class Facebook extends Component {
                     <Button
                       variant="primary"
                       onClick={(event) => {
-                        this.getPageAnalytics(page.page_id);
+                        getPageAnalytics(
+                          page.page_id,
+                          this,
+                          getPageAccessToken,
+                          getPageLikes,
+                          getUserPageEngagement,
+                          getPageEngagements,
+                          getNegativePageEngagements,
+                          getPagePostData,
+                          getPagePostDailyReach
+                        );
                       }}
                     >
                       Get page analytics
@@ -657,7 +278,7 @@ class Facebook extends Component {
 
     if (renderPageAnalytics) {
       // console.log(engagedUsers);
-      console.log("rendering page analytics");
+      // console.log("rendering page analytics");
 
       let colWidth = (
         <colgroup>
@@ -674,21 +295,34 @@ class Facebook extends Component {
         totalPageLikesBetweenRange,
         displayDailyEngagements,
         displayDailyPageLikes,
+        displayDailyReach,
+        typeTotalsForPageEngagementsBetweenRange,
+        typeTotalsForNegativePageEngagementsBetweenRange,
+        dailyReachData,
       } = this.state;
 
-      console.log(this.state);
+      // console.log(this.state);
 
       let { originalEndDate, originalStartDate } = this.state.dateRange;
       originalEndDate = format(new Date(originalEndDate), "dd/MM/yyyy");
       originalStartDate = format(new Date(originalStartDate), "dd/MM/yyyy");
 
+      let last_7d = [];
+      let today = new Date();
+      let yesterday = subDays(today, 1);
+      for (let i = 0; i < 7; i++) {
+        let xDate = subDays(yesterday, i);
+        last_7d.push(format(new Date(xDate), "dd/MM/yyyy"));
+      }
+
       return (
         <>
+          {/* Total Page Likes (Lifetime), Page Likes (date range) */}
           <Table striped bordered hover variant="dark">
             {colWidth}
             <thead>
               <tr>
-                <th>Total Page Likes</th>
+                <th>Total Page Likes (Lifetime)</th>
                 <th>{pageLikes}</th>
               </tr>
               <tr>
@@ -717,6 +351,36 @@ class Facebook extends Component {
             pageLikesBetweenRange,
             "Likes"
           )}
+          {/* Daily Reach (last 7 days) */}
+          <Table striped bordered hover variant="dark">
+            {colWidth}
+            <thead>
+              <tr>
+                <th>
+                  Daily Reach (Last 7 Days)
+                  <br />
+                  <button
+                    type="button"
+                    className={`btn btn-primary`}
+                    style={{ maxHeight: "38px", width: "100%" }}
+                    onClick={(event) => {
+                      this.toggleDisplayTableComponent("displayDailyReach");
+                    }}
+                  >
+                    Toggle Daily Breakdown
+                  </button>
+                </th>
+                <th>{totalEngagedUsers}</th>
+              </tr>
+            </thead>
+          </Table>
+          {this.toggledTableComponent(
+            colWidth,
+            displayDailyReach,
+            dailyReachData,
+            "Daily Reach"
+          )}
+          {/* Engaged Users */}
           <Table striped bordered hover variant="dark">
             {colWidth}
             <thead>
@@ -749,6 +413,106 @@ class Facebook extends Component {
             engagedUsers,
             "User Engagements"
           )}
+          {/* Positive Engagement Metrics */}
+          <Table striped bordered hover variant="dark">
+            {colWidth}
+            <thead>
+              <tr>
+                <th>
+                  Positive Engagement Metrics
+                  <br />
+                  {`${originalStartDate}`} - {`${originalEndDate}`}
+                  <br />
+                </th>
+                <th>
+                  Total:
+                  <br />
+                  {typeTotalsForPageEngagementsBetweenRange.total}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Answered a question</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.answer}</td>
+              </tr>
+              <tr>
+                <td>Offers claimed</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.claim}</td>
+              </tr>
+              <tr>
+                <td>Commented on a story</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.comment}</td>
+              </tr>
+              <tr>
+                <td>Liked a story</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.like}</td>
+              </tr>
+              <tr>
+                <td>Shared a story</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.link}</td>
+              </tr>
+              <tr>
+                <td>Respond to an event</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.rsvp}</td>
+              </tr>
+              <tr>
+                <td>Other</td>
+                <td>{typeTotalsForPageEngagementsBetweenRange.other}</td>
+              </tr>
+            </tbody>
+          </Table>
+          {/* Negative Engagement Metrics */}
+          <Table striped bordered hover variant="dark">
+            {colWidth}
+            <thead>
+              <tr>
+                <th>
+                  Negative Engagement Metrics
+                  <br />
+                  {`${originalStartDate}`} - {`${originalEndDate}`}
+                  <br />
+                </th>
+                <th>
+                  Total:
+                  <br />
+                  {typeTotalsForNegativePageEngagementsBetweenRange.total}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Hide story from page</td>
+                <td>
+                  {typeTotalsForNegativePageEngagementsBetweenRange.hide_clicks}
+                </td>
+              </tr>
+              <tr>
+                <td>Hide all posts from page</td>
+                <td>
+                  {
+                    typeTotalsForNegativePageEngagementsBetweenRange.hide_all_clicks
+                  }
+                </td>
+              </tr>
+              <tr>
+                <td>Reported an object as spam</td>
+                <td>
+                  {
+                    typeTotalsForNegativePageEngagementsBetweenRange.report_spam_clicks
+                  }
+                </td>
+              </tr>
+              <tr>
+                <td>Unliked page</td>
+                <td>
+                  {
+                    typeTotalsForNegativePageEngagementsBetweenRange.unlike_page_clicks
+                  }
+                </td>
+              </tr>
+            </tbody>
+          </Table>
         </>
       );
     }
@@ -780,7 +544,7 @@ class Facebook extends Component {
       >
         <div>
           {button("Total Page Likes for a page", "success")}
-          {button("Daily Reach", "success")}
+          {button("Daily Reach (Last 7 Days)", "success")}
           {button("Demographics", "success")}
         </div>
         <div>
@@ -796,6 +560,91 @@ class Facebook extends Component {
     );
   };
 
+  handleChange(event, stateObj) {
+    let value = event.target.value;
+
+    switch (stateObj) {
+      case "xPagePosts":
+        if (value > 100) {
+          value = 100;
+        }
+        this.setState({ xPagePosts: value });
+        break;
+      default:
+        this.setState({ [`${stateObj}`]: value });
+        break;
+    }
+  }
+
+  xPagePostsForm = () => {
+    return (
+      <Form style={{ margin: "auto" }}>
+        <Form.Group>
+          <Form.Label>Last X posts to retrieve (100 max)</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="0"
+            style={{ maxWidth: "100px", margin: "auto" }}
+            value={this.state.xPagePosts}
+            onChange={(event) => {
+              this.handleChange(event, "xPagePosts");
+            }}
+          />
+        </Form.Group>
+      </Form>
+    );
+  };
+
+  pagePostsCards = () => {
+    let { renderPageAnalytics } = this.state;
+
+    if (renderPageAnalytics) {
+      console.log("rendering page posts");
+      let { pagePostsData } = this.state;
+      console.log(pagePostsData);
+      let postCard = (post, key) => {
+        console.log(post.likes);
+        console.log(post.message);
+        let date = format(new Date(post.created_time), "EEEE LLL do yyyy");
+        return (
+          <Card style={{ width: "18rem", color: "black" }} key={key}>
+            {/* <Card.Img variant="top" src="holder.js/100px180" /> */}
+            <Card.Body>
+              <Card.Title>{date}</Card.Title>
+              <Card.Text>{post.message}</Card.Text>
+              <div>Likes: {post.likes}</div>
+              <div>Comments: {post.comments}</div>
+            </Card.Body>
+          </Card>
+          // <div key={key}>
+          //   Page Post
+          //   <br />
+          //   Message: {post.message}
+          //   <br />
+          //   Likes: {post.likes}
+          //   <br />
+          //   Comments: {post.comments}
+          // </div>
+        );
+      };
+
+      return (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            rowGap: "10px",
+          }}
+          className="mb-2"
+        >
+          {pagePostsData.map((post, key) => {
+            return postCard(post, key);
+          })}
+        </div>
+      );
+    }
+  };
+
   render() {
     return (
       <>
@@ -804,9 +653,15 @@ class Facebook extends Component {
           <div>{this.analyticsButtons()}</div>
 
           <div>
-            <DateRangePickerComponent setDateRange={this.setDateRange} />
+            {this.xPagePostsForm()}
+            <DateRangePickerComponent
+              setDateRange={setDateRange}
+              callingComponent={this}
+            />
           </div>
+
           {this.fbPagesCard()}
+          {this.pagePostsCards()}
           {this.pageAnalyticsTable()}
         </div>
       </>
