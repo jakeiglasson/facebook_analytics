@@ -25,6 +25,7 @@ import { getUserPageEngagement } from "./getUserPageEngagement.jsx";
 import { getPageEngagements } from "./getPageEngagements.jsx";
 import { getNegativePageEngagements } from "./getNegativePageEngagements.jsx";
 import { getPagePostData } from "./getPagePostData.jsx";
+import { getPagePostDailyReach } from "./getPagePostDailyReach";
 
 class Facebook extends Component {
   state = {
@@ -55,9 +56,11 @@ class Facebook extends Component {
     totalPageLikesBetweenRange: "",
     displayDailyEngagements: "none",
     displayDailyPageLikes: "none",
+    displayDailyReach: "none",
     xPagePosts: 3,
     pagePostsData: [],
     test: 0,
+    dailyReachData: [],
   };
 
   responseFacebook = async (response) => {
@@ -111,8 +114,8 @@ class Facebook extends Component {
     return (
       <div className="mb-3">
         <FacebookLogin
-          appId="720814561829107"
-          autoLoad={true}
+          appId={this.props.appID}
+          // autoLoad={true}
           fields="name,email,picture,friends,accounts"
           scope="public_profile,email,user_friends,pages_show_list,user_birthday,pages_read_engagement,pages_show_list,read_insights"
           // onClick={this.componentClicked}
@@ -194,7 +197,8 @@ class Facebook extends Component {
                           getUserPageEngagement,
                           getPageEngagements,
                           getNegativePageEngagements,
-                          getPagePostData
+                          getPagePostData,
+                          getPagePostDailyReach
                         );
                       }}
                     >
@@ -291,8 +295,10 @@ class Facebook extends Component {
         totalPageLikesBetweenRange,
         displayDailyEngagements,
         displayDailyPageLikes,
+        displayDailyReach,
         typeTotalsForPageEngagementsBetweenRange,
         typeTotalsForNegativePageEngagementsBetweenRange,
+        dailyReachData,
       } = this.state;
 
       // console.log(this.state);
@@ -301,8 +307,17 @@ class Facebook extends Component {
       originalEndDate = format(new Date(originalEndDate), "dd/MM/yyyy");
       originalStartDate = format(new Date(originalStartDate), "dd/MM/yyyy");
 
+      let last_7d = [];
+      let today = new Date();
+      let yesterday = subDays(today, 1);
+      for (let i = 0; i < 7; i++) {
+        let xDate = subDays(yesterday, i);
+        last_7d.push(format(new Date(xDate), "dd/MM/yyyy"));
+      }
+
       return (
         <>
+          {/* Total Page Likes (Lifetime), Page Likes (date range) */}
           <Table striped bordered hover variant="dark">
             {colWidth}
             <thead>
@@ -336,6 +351,36 @@ class Facebook extends Component {
             pageLikesBetweenRange,
             "Likes"
           )}
+          {/* Daily Reach (last 7 days) */}
+          <Table striped bordered hover variant="dark">
+            {colWidth}
+            <thead>
+              <tr>
+                <th>
+                  Daily Reach (Last 7 Days)
+                  <br />
+                  <button
+                    type="button"
+                    className={`btn btn-primary`}
+                    style={{ maxHeight: "38px", width: "100%" }}
+                    onClick={(event) => {
+                      this.toggleDisplayTableComponent("displayDailyReach");
+                    }}
+                  >
+                    Toggle Daily Breakdown
+                  </button>
+                </th>
+                <th>{totalEngagedUsers}</th>
+              </tr>
+            </thead>
+          </Table>
+          {this.toggledTableComponent(
+            colWidth,
+            displayDailyReach,
+            dailyReachData,
+            "Daily Reach"
+          )}
+          {/* Engaged Users */}
           <Table striped bordered hover variant="dark">
             {colWidth}
             <thead>
@@ -368,6 +413,7 @@ class Facebook extends Component {
             engagedUsers,
             "User Engagements"
           )}
+          {/* Positive Engagement Metrics */}
           <Table striped bordered hover variant="dark">
             {colWidth}
             <thead>
@@ -416,6 +462,7 @@ class Facebook extends Component {
               </tr>
             </tbody>
           </Table>
+          {/* Negative Engagement Metrics */}
           <Table striped bordered hover variant="dark">
             {colWidth}
             <thead>
@@ -497,7 +544,7 @@ class Facebook extends Component {
       >
         <div>
           {button("Total Page Likes for a page", "success")}
-          {button("Daily Reach", "success")}
+          {button("Daily Reach (Last 7 Days)", "success")}
           {button("Demographics", "success")}
         </div>
         <div>
@@ -513,12 +560,20 @@ class Facebook extends Component {
     );
   };
 
-  handleChange(event) {
+  handleChange(event, stateObj) {
     let value = event.target.value;
-    if (value > 100) {
-      value = 100;
+
+    switch (stateObj) {
+      case "xPagePosts":
+        if (value > 100) {
+          value = 100;
+        }
+        this.setState({ xPagePosts: value });
+        break;
+      default:
+        this.setState({ [`${stateObj}`]: value });
+        break;
     }
-    this.setState({ xPagePosts: value });
   }
 
   xPagePostsForm = () => {
@@ -532,7 +587,7 @@ class Facebook extends Component {
             style={{ maxWidth: "100px", margin: "auto" }}
             value={this.state.xPagePosts}
             onChange={(event) => {
-              this.handleChange(event);
+              this.handleChange(event, "xPagePosts");
             }}
           />
         </Form.Group>

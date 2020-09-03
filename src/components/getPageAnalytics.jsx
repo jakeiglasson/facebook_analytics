@@ -6,7 +6,8 @@ export const getPageAnalytics = async (
   getUserPageEngagement,
   getPageEngagements,
   getNegativePageEngagements,
-  getPagePostData
+  getPagePostData,
+  getPagePostDailyReach
 ) => {
   console.log("Getting analytics for page");
 
@@ -30,7 +31,8 @@ export const getPageAnalytics = async (
     getPageLikes(page_id, base, pageAccessToken, callingObj),
     getPageEngagements(page_id, base, pageAccessToken, callingObj),
     getNegativePageEngagements(page_id, base, pageAccessToken, callingObj),
-    getPagePostData(page_id, base, pageAccessToken, callingObj)
+    getPagePostData(page_id, base, pageAccessToken, callingObj),
+    getPagePostDailyReach(page_id, base, pageAccessToken, callingObj)
   );
   await Promise.all(promises);
 
