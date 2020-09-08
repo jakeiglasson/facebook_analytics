@@ -79,13 +79,6 @@ class App extends Component {
     return (
       <div className="App">
         <header className="App-header">
-          {/* <img src={logo} className="App-logo" alt="logo" /> */}
-          <h1 className="App-title">Facebook Analytics</h1>
-          {(() => {
-            if (!this.state.loggedIn) {
-              return <p>To get started, authenticate with Facebook.</p>;
-            }
-          })()}
           {this.getAppId()}
           {(() => {
             if (this.state.showFacebookLogin) {
@@ -93,6 +86,7 @@ class App extends Component {
                 <Facebook
                   changeLoggedIn={this.changeLoggedIn}
                   appID={this.state.appID}
+                  loggedIn={this.state.loggedIn}
                 />
               );
             }

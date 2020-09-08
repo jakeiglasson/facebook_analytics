@@ -27,6 +27,7 @@ import { getNegativePageEngagements } from "./getNegativePageEngagements.jsx";
 import { getPagePostData } from "./getPagePostData.jsx";
 import { getPagePostDailyReach } from "./getPagePostDailyReach";
 import { getPageDemographics } from "./getPageDemographics";
+import { getPageImpressions } from "./getPageImpressions";
 
 class Facebook extends Component {
   state = {
@@ -46,6 +47,7 @@ class Facebook extends Component {
     },
     requestsNeeded: "",
     engagedUsers: [],
+    pageImpressions: [],
     totalEngagedUsers: "",
     renderPageAnalytics: false,
     pageLikes: "",
@@ -55,15 +57,18 @@ class Facebook extends Component {
     typeTotalsForPageEngagementsBetweenRange: [],
     typeTotalsForNegativePageEngagementsBetweenRange: [],
     totalPageLikesBetweenRange: "",
+    totalPageImpressions: "",
     displayDailyEngagements: "none",
     displayDailyPageLikes: "none",
     displayDailyReach: "none",
+    displayPageImpressions: "none",
     xPagePosts: 3,
     pagePostsData: [],
     test: 0,
     dailyReachData: [],
     dailyReachTotal: 0,
     pageLikesDemographics: [],
+    hideCalender: false,
   };
 
   responseFacebook = async (response) => {
@@ -118,7 +123,7 @@ class Facebook extends Component {
       <div className="mb-3">
         <FacebookLogin
           appId={this.props.appID}
-          // autoLoad={true}
+          autoLoad={true}
           fields="name,email,picture,friends,accounts"
           scope="email,read_insights,pages_show_list,pages_read_engagement,pages_read_user_content,pages_manage_posts,pages_manage_engagement"
           // onClick={this.componentClicked}
@@ -131,22 +136,7 @@ class Facebook extends Component {
   fbContent = () => {
     let fbContent;
     if (this.state.isLoggedIn) {
-      fbContent = (
-        <div
-          style={{
-            width: "400px",
-            margin: "auto",
-            padding: "20px",
-          }}
-        >
-          {/* <img src={this.state.picture} alt={this.state.name} /> */}
-          <h2>Welcome {this.state.name}</h2>
-          {/* Email: {this.state.email}
-          <p style={{ fontSize: "10px", wordWrap: "break-word" }}>
-            Access Token: {this.state.accessToken}
-          </p> */}
-        </div>
-      );
+      fbContent = <></>;
     } else {
       fbContent = this.LoginButton();
     }
@@ -164,52 +154,55 @@ class Facebook extends Component {
               gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
               justifyItems: "center",
               maxWidth: "900px",
+              maxHeight: "300px",
               marginLeft: "auto",
               marginRight: "auto",
             }}
           >
             {this.state.pages.map((page, i) => {
               return (
-                <Card
+                <div
                   style={{
                     width: "15rem",
-                    minHeight: "270px",
-                    display: "inline-block",
+                    display: "grid",
+                    gridTemplateRows: "1fr 25%",
+                    rowGap: "10px",
+                    alignItems: "center",
+                    justifyItems: "center",
+                    background: "white",
                     color: "black",
+                    padding: "20px",
+                    borderRadius: ".25rem",
                   }}
                   key={i}
-                  className="mr-4"
                 >
-                  {/* <Card.Img variant="top" src="holder.js/100px180" /> */}
-                  <FontAwesomeIcon icon={faColumns} />
-                  <Card.Body>
-                    <Card.Title style={{ fontSize: "16px" }}>
-                      {page.page_name}
-                    </Card.Title>
-                    <Card.Text style={{ fontSize: "16px" }}>
-                      page_id: {page.page_id}
-                    </Card.Text>
-                    <Button
-                      variant="primary"
-                      onClick={(event) => {
-                        getPageAnalytics(
-                          page.page_id,
-                          this,
-                          getPageAccessToken,
-                          getPageLikes,
-                          getUserPageEngagement,
-                          getPageEngagements,
-                          getNegativePageEngagements,
-                          getPagePostData,
-                          getPagePostDailyReach,
-                          getPageDemographics
-                        );
-                      }}
-                    >
-                      Get page analytics
-                    </Button>
-                  </Card.Body>
-                </Card>
+                  <FontAwesomeIcon
+                    icon={faColumns}
+                    style={{ fontSize: "50px" }}
+                  />
+                  <div>{page.page_name}</div>
+                  <div>ID: {page.page_id}</div>
+                  <Button
+                    variant="primary"
+                    onClick={(event) => {
+                      getPageAnalytics(
+                        page.page_id,
+                        this,
+                        getPageAccessToken,
+                        getPageLikes,
+                        getUserPageEngagement,
+                        getPageEngagements,
+                        getNegativePageEngagements,
+                        getPagePostData,
+                        getPagePostDailyReach,
+                        getPageDemographics,
+                        getPageImpressions
+                      );
+                    }}
+                  >
+                    Get page analytics
+                  </Button>
+                </div>
               );
             })}
           </div>
@@ -323,11 +316,14 @@ class Facebook extends Component {
         displayDailyEngagements,
         displayDailyPageLikes,
         displayDailyReach,
+        displayPageImpressions,
         typeTotalsForPageEngagementsBetweenRange,
         typeTotalsForNegativePageEngagementsBetweenRange,
         dailyReachData,
         dailyReachTotal,
         pageLikesDemographics,
+        pageImpressions,
+        totalPageImpressions,
       } = this.state;
 
       console.log(pageLikesDemographics);
@@ -347,6 +343,11 @@ class Facebook extends Component {
       return (
         <>
           {/* Total Page Likes (Lifetime), Page Likes (date range) */}
+          <div style={{ textAlign: "left", marginBottom: "1rem" }}>
+            Page Likes:
+            <br />
+            The number of people who have liked your Page.
+          </div>
           <Table striped bordered hover variant="dark">
             {colWidth}
             <thead>
@@ -380,12 +381,65 @@ class Facebook extends Component {
             pageLikesBetweenRange,
             "Likes"
           )}
-          {/* Page Demographics */}
+          {/* Total Page Impressions (Lifetime), Page Impressions (date range) */}
+          <div style={{ textAlign: "left", marginBottom: "1rem" }}>
+            Page Impressions:
+            <br />
+            The number of times any content from your Page or about your Page
+            entered a person's screen. This includes posts, stories, check-ins,
+            ads, social information from people who interact with your Page and
+            more.
+          </div>
           <Table striped bordered hover variant="dark">
             {colWidth}
             <thead>
               <tr>
-                <th>Page Demographics</th>
+                <th>
+                  Page Impressions
+                  <br />
+                  {`${originalStartDate}`} - {`${originalEndDate}`}
+                  <br />
+                  <button
+                    type="button"
+                    className={`btn btn-primary`}
+                    style={{ maxHeight: "38px", width: "100%" }}
+                    onClick={(event) => {
+                      this.toggleDisplayTableComponent(
+                        "displayPageImpressions"
+                      );
+                    }}
+                  >
+                    Toggle Daily Breakdown
+                  </button>
+                </th>
+                <th>{totalPageImpressions}</th>
+              </tr>
+            </thead>
+          </Table>
+          {this.toggledTableComponent(
+            colWidth,
+            displayPageImpressions,
+            pageImpressions,
+            "Total"
+          )}
+          {/* Page Demographics */}
+          <div style={{ textAlign: "left", marginBottom: "1rem" }}>
+            Page Demographics (Lifetime):
+            <br />
+            The number of people who saw any of your posts at least once,
+            grouped by age and gender. Aggregated demographic data is based on a
+            number of factors, including age and gender information users
+            provide in their Facebook profiles. This number is an estimate.
+            <br />
+            Note: If empty, the page does not have enough demographic
+            information. Once sufficient information is present it will return a
+            result (this is a facebook api limitation).
+          </div>
+          <Table striped bordered hover variant="dark">
+            {colWidth}
+            <thead>
+              <tr>
+                <th>Gender / Age</th>
                 <th>Total</th>
               </tr>
             </thead>
@@ -394,6 +448,12 @@ class Facebook extends Component {
             </tbody>
           </Table>
           {/* Daily Reach (last 7 days) */}
+          <div style={{ textAlign: "left", marginBottom: "1rem" }}>
+            Daily Reach:
+            <br />
+            The number of people who had any of your Page's posts enter their
+            screen. Posts include statuses, photos, links, videos and more.
+          </div>
           <Table striped bordered hover variant="dark">
             {colWidth}
             <thead>
@@ -423,6 +483,12 @@ class Facebook extends Component {
             "Daily Reach"
           )}
           {/* Engaged Users */}
+          <div style={{ textAlign: "left", marginBottom: "1rem" }}>
+            Engaged Users:
+            <br />
+            The number of people who engaged with your Page. Engagement includes
+            any click.
+          </div>
           <Table striped bordered hover variant="dark">
             {colWidth}
             <thead>
@@ -456,6 +522,12 @@ class Facebook extends Component {
             "User Engagements"
           )}
           {/* Positive Engagement Metrics */}
+          <div style={{ textAlign: "left", marginBottom: "1rem" }}>
+            Positive Engagement Metrics:
+            <br />
+            The number of times people took a positive action broken down by
+            type.
+          </div>
           <Table striped bordered hover variant="dark">
             {colWidth}
             <thead>
@@ -505,6 +577,12 @@ class Facebook extends Component {
             </tbody>
           </Table>
           {/* Negative Engagement Metrics */}
+          <div style={{ textAlign: "left", marginBottom: "1rem" }}>
+            Negative Engagement Metrics:
+            <br />
+            The number of times people took a negative action broken down by
+            type.
+          </div>
           <Table striped bordered hover variant="dark">
             {colWidth}
             <thead>
@@ -641,15 +719,11 @@ class Facebook extends Component {
     let { renderPageAnalytics } = this.state;
 
     if (renderPageAnalytics) {
-      console.log("rendering page posts");
       let { pagePostsData } = this.state;
-      console.log(pagePostsData);
       let postCard = (post, key) => {
-        // console.log(post.likes);
-        // console.log(post.message);
         let date = format(new Date(post.created_time), "EEEE LLL do yyyy");
         return (
-          <Card style={{ width: "18rem", color: "black" }} key={key}>
+          <Card style={{ color: "black", textAlign: "left" }} key={key}>
             {/* <Card.Img variant="top" src="holder.js/100px180" /> */}
             <Card.Body>
               <Card.Title>{date}</Card.Title>
@@ -658,15 +732,6 @@ class Facebook extends Component {
               <div>Comments: {post.comments}</div>
             </Card.Body>
           </Card>
-          // <div key={key}>
-          //   Page Post
-          //   <br />
-          //   Message: {post.message}
-          //   <br />
-          //   Likes: {post.likes}
-          //   <br />
-          //   Comments: {post.comments}
-          // </div>
         );
       };
 
@@ -674,7 +739,6 @@ class Facebook extends Component {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
             rowGap: "10px",
           }}
           className="mb-2"
@@ -687,21 +751,59 @@ class Facebook extends Component {
     }
   };
 
+  pageTitle = () => {
+    if (!this.props.loggedIn) {
+      return (
+        <>
+          <h1 className="App-title">Facebook Analytics</h1>
+          <p>To get started, authenticate with Facebook.</p>
+        </>
+      );
+    } else {
+      return (
+        <h1 className="App-title">
+          Facebook Analytics{" "}
+          <img src={this.state.picture} alt={this.state.name} />
+        </h1>
+      );
+    }
+  };
+
+  calender = () => {
+    if (this.state.hideCalender) {
+      return (
+        <Button
+          variant="primary"
+          onClick={(event) => {
+            this.setState({
+              hideCalender: !this.state.hideCalender,
+            });
+          }}
+          className="mb-2"
+        >
+          Show calender
+        </Button>
+      );
+    } else {
+      return (
+        <DateRangePickerComponent
+          setDateRange={setDateRange}
+          callingComponent={this}
+        />
+      );
+    }
+  };
+
   render() {
     return (
       <>
-        <div>
+        {this.pageTitle()}
+        <div style={{ width: "900px" }}>
           {this.fbContent()}
-          <div>{this.analyticsButtons()}</div>
+          {/* <div>{this.analyticsButtons()}</div> */}
 
-          <div>
-            {this.xPagePostsForm()}
-            <DateRangePickerComponent
-              setDateRange={setDateRange}
-              callingComponent={this}
-            />
-          </div>
-
+          <div>{this.xPagePostsForm()}</div>
+          {this.calender()}
           {this.fbPagesCard()}
           {this.pagePostsCards()}
           {this.pageAnalyticsTable()}

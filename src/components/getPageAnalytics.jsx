@@ -10,7 +10,8 @@ export const getPageAnalytics = async (
   getNegativePageEngagements,
   getPagePostData,
   getPagePostDailyReach,
-  getPageDemographics
+  getPageDemographics,
+  getPageImpressions
 ) => {
   console.log("Getting analytics for page");
 
@@ -19,6 +20,8 @@ export const getPageAnalytics = async (
     pageLikesBetweenRange: [],
     renderPageAnalytics: false,
     getPageEngagements: [],
+    pageLikesDemographics: [],
+    hideCalender: true,
   });
 
   let base = "https://graph.facebook.com";
@@ -36,7 +39,8 @@ export const getPageAnalytics = async (
     getNegativePageEngagements(page_id, base, pageAccessToken, callingObj),
     getPagePostData(page_id, base, pageAccessToken, callingObj),
     getPagePostDailyReach(page_id, base, pageAccessToken, callingObj),
-    getPageDemographics(page_id, base, pageAccessToken, callingObj)
+    getPageDemographics(page_id, base, pageAccessToken, callingObj),
+    getPageImpressions(page_id, base, pageAccessToken, callingObj)
   );
   await Promise.all(promises);
 

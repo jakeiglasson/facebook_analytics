@@ -1,13 +1,13 @@
 import React, { Component } from "react";
 import { DateRangePicker, DateRange } from "react-date-range";
-import { addDays } from "date-fns";
+import { addDays, subDays } from "date-fns";
 
 class DateRangePickerComponent extends Component {
   state = {
     selection: [
       {
-        startDate: new Date(),
-        endDate: addDays(new Date(), 7),
+        startDate: subDays(new Date(), 7),
+        endDate: new Date(),
         key: "selection",
       },
     ],
