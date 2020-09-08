@@ -1,3 +1,5 @@
+import { getPageDemographics } from "./getPageDemographics";
+
 export const getPageAnalytics = async (
   page_id,
   callingObj,
@@ -7,7 +9,8 @@ export const getPageAnalytics = async (
   getPageEngagements,
   getNegativePageEngagements,
   getPagePostData,
-  getPagePostDailyReach
+  getPagePostDailyReach,
+  getPageDemographics
 ) => {
   console.log("Getting analytics for page");
 
@@ -32,7 +35,8 @@ export const getPageAnalytics = async (
     getPageEngagements(page_id, base, pageAccessToken, callingObj),
     getNegativePageEngagements(page_id, base, pageAccessToken, callingObj),
     getPagePostData(page_id, base, pageAccessToken, callingObj),
-    getPagePostDailyReach(page_id, base, pageAccessToken, callingObj)
+    getPagePostDailyReach(page_id, base, pageAccessToken, callingObj),
+    getPageDemographics(page_id, base, pageAccessToken, callingObj)
   );
   await Promise.all(promises);
 
