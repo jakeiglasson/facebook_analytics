@@ -15,8 +15,8 @@ export const getPagePostData = async (
 
     let url = `${base}/${page_id}/published_posts/?${limit}&access_token=${pageAccessToken}`;
 
-    console.log("|-> retrieving published posts from page:");
-    console.log(url);
+    // console.log("|-> retrieving published posts from page:");
+    // console.log(url);
 
     try {
       const response = await axios.get(url);
@@ -71,5 +71,5 @@ export const getPagePostData = async (
     pagePostsData: postData,
   });
 
-  console.log(callingObj.state.pagePostsData);
+  // console.log(callingObj.state.pagePostsData);
 };

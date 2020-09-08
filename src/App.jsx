@@ -13,7 +13,7 @@ class App extends Component {
     loggedIn: false,
     showFacebookLogin: false,
     displayGetAppID: "block",
-    appID: "720814561829107",
+    appID: "612602596106413", //720814561829107
   };
 
   changeLoggedIn = (status) => {

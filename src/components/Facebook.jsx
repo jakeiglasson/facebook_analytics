@@ -26,6 +26,7 @@ import { getPageEngagements } from "./getPageEngagements.jsx";
 import { getNegativePageEngagements } from "./getNegativePageEngagements.jsx";
 import { getPagePostData } from "./getPagePostData.jsx";
 import { getPagePostDailyReach } from "./getPagePostDailyReach";
+import { getPageDemographics } from "./getPageDemographics";
 
 class Facebook extends Component {
   state = {
@@ -61,6 +62,8 @@ class Facebook extends Component {
     pagePostsData: [],
     test: 0,
     dailyReachData: [],
+    dailyReachTotal: 0,
+    pageLikesDemographics: [],
   };
 
   responseFacebook = async (response) => {
@@ -117,7 +120,7 @@ class Facebook extends Component {
           appId={this.props.appID}
           // autoLoad={true}
           fields="name,email,picture,friends,accounts"
-          scope="public_profile,email,user_friends,pages_show_list,user_birthday,pages_read_engagement,pages_show_list,read_insights"
+          scope="email,read_insights,pages_show_list,pages_read_engagement,pages_read_user_content,pages_manage_posts,pages_manage_engagement"
           // onClick={this.componentClicked}
           callback={this.responseFacebook}
         />
@@ -198,7 +201,8 @@ class Facebook extends Component {
                           getPageEngagements,
                           getNegativePageEngagements,
                           getPagePostData,
-                          getPagePostDailyReach
+                          getPagePostDailyReach,
+                          getPageDemographics
                         );
                       }}
                     >
@@ -273,6 +277,29 @@ class Facebook extends Component {
     );
   };
 
+  pageDemographicsTableData = (pageLikesDemographics) => {
+    console.log(pageLikesDemographics);
+
+    const ordered = {};
+    Object.keys(pageLikesDemographics)
+      .sort()
+      .forEach(function (key) {
+        ordered[key] = pageLikesDemographics[key];
+      });
+
+    console.log(ordered);
+
+    return Object.entries(ordered).map(([key, value]) => {
+      console.log(key, value);
+      return (
+        <tr>
+          <td>{key}</td>
+          <td>{value}</td>
+        </tr>
+      );
+    });
+  };
+
   pageAnalyticsTable = () => {
     let { renderPageAnalytics } = this.state;
 
@@ -299,9 +326,11 @@ class Facebook extends Component {
         typeTotalsForPageEngagementsBetweenRange,
         typeTotalsForNegativePageEngagementsBetweenRange,
         dailyReachData,
+        dailyReachTotal,
+        pageLikesDemographics,
       } = this.state;
 
-      // console.log(this.state);
+      console.log(pageLikesDemographics);
 
       let { originalEndDate, originalStartDate } = this.state.dateRange;
       originalEndDate = format(new Date(originalEndDate), "dd/MM/yyyy");
@@ -351,6 +380,19 @@ class Facebook extends Component {
             pageLikesBetweenRange,
             "Likes"
           )}
+          {/* Page Demographics */}
+          <Table striped bordered hover variant="dark">
+            {colWidth}
+            <thead>
+              <tr>
+                <th>Page Demographics</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {this.pageDemographicsTableData(pageLikesDemographics)}
+            </tbody>
+          </Table>
           {/* Daily Reach (last 7 days) */}
           <Table striped bordered hover variant="dark">
             {colWidth}
@@ -370,7 +412,7 @@ class Facebook extends Component {
                     Toggle Daily Breakdown
                   </button>
                 </th>
-                <th>{totalEngagedUsers}</th>
+                <th>{dailyReachTotal}</th>
               </tr>
             </thead>
           </Table>
@@ -603,8 +645,8 @@ class Facebook extends Component {
       let { pagePostsData } = this.state;
       console.log(pagePostsData);
       let postCard = (post, key) => {
-        console.log(post.likes);
-        console.log(post.message);
+        // console.log(post.likes);
+        // console.log(post.message);
         let date = format(new Date(post.created_time), "EEEE LLL do yyyy");
         return (
           <Card style={{ width: "18rem", color: "black" }} key={key}>

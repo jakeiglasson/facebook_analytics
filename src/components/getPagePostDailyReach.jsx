@@ -23,8 +23,14 @@ export const getPagePostDailyReach = async (
     let dailyReach = response.data.data[0].values;
     console.log("dailyReachData", dailyReach);
 
+    let dailyReachTotal = 0;
+    dailyReach.map((data) => {
+      dailyReachTotal += data.value;
+    });
+
     callingObj.setState({
       dailyReachData: dailyReach,
+      dailyReachTotal: dailyReachTotal,
     });
   } catch (error) {
     console.log(error);
